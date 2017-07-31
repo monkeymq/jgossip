@@ -32,7 +32,7 @@ gossipService.shutdown();
 # Settings
 * gossipInterval - How often (in milliseconds) to gossip list of members to other node(s). Default is 1000ms
 * networkDelay - Network delay in ms. Default is 200ms
-* msgService - Which message sync implementation. Default is UDPMsgService, you can extand it.
+* msgService - Which message sync implementation. Default is **UDPMsgService.class** use UDP protocol to send message, certainly you can extand it.
 
 # Event Listener
 Now, we have three kinds of event
