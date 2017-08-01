@@ -59,7 +59,7 @@ try {
     seed.setPort(60001);
     seedNodes.add(seed);
 
-    gossipService = new GossipService(cluster, myIpAddress, gossip_port, null, seedNodes, settings, (member, state) ->              System.out.println("member:" + member + "  state: " + state));
+    gossipService = new GossipService(cluster, myIpAddress, gossip_port, null, seedNodes, settings, (member, state) ->System.out.println("member:" + member + "  state: " + state));
 } catch (Exception e) {
     e.printStackTrace();
 }
