@@ -45,23 +45,24 @@ GossipState.JOIN;
 # Example
 ```java
 int gossip_port = 60001;
-        String cluster = "cgossip_cluster";
+String cluster = "cgossip_cluster";
+
+GossipSettings settings = new GossipSettings();
+settings.setGossipInterval(1000);
+
+try {
+    String myIpAddress = InetAddress.getLocalHost().getHostAddress();
+    List<SeedMember> seedNodes = new ArrayList<>();
+    SeedMember seed = new SeedMember();
+    seed.setCluster(cluster);
+    seed.setIpAddress(myIpAddress);
+    seed.setPort(60001);
+    seedNodes.add(seed);
+
+    gossipService = new GossipService(cluster, myIpAddress, gossip_port, null, seedNodes, settings, (member, state) ->              System.out.println("member:" + member + "  state: " + state));
+} catch (Exception e) {
+    e.printStackTrace();
+}
+gossipService.start();
         
-        GossipSettings settings = new GossipSettings();
-        settings.setGossipInterval(1000);
-
-        try {
-            String myIpAddress = InetAddress.getLocalHost().getHostAddress();
-            List<SeedMember> seedNodes = new ArrayList<>();
-            SeedMember seed = new SeedMember();
-            seed.setCluster(cluster);
-            seed.setIpAddress(myIpAddress);
-            seed.setPort(60001);
-            seedNodes.add(seed);
-
-            gossipService = new GossipService(cluster, myIpAddress, gossip_port, null, seedNodes, settings, (member, state) -> System.out.println("member:" + member + "  state: " + state));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        gossipService.start();
-        ```
+```
