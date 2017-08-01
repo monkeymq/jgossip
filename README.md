@@ -45,7 +45,7 @@ GossipState.JOIN;
 # Example
 ```java
 int gossip_port = 60001;
-String cluster = "cgossip_cluster";
+String cluster = "gossip_cluster";
 
 GossipSettings settings = new GossipSettings();
 settings.setGossipInterval(1000);
