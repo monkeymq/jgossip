@@ -12,22 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package net.lvsq.jgossip.core;
+package com.webex.cgossip.core;
 
+import com.webex.cgossip.event.GossipListener;
+import com.webex.cgossip.model.Ack2Message;
+import com.webex.cgossip.model.AckMessage;
+import com.webex.cgossip.model.GossipDigest;
+import com.webex.cgossip.model.GossipMember;
+import com.webex.cgossip.model.GossipState;
+import com.webex.cgossip.model.HeartbeatState;
+import com.webex.cgossip.model.MessageType;
+import com.webex.cgossip.model.SeedMember;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
-import net.lvsq.jgossip.event.GossipListener;
-import net.lvsq.jgossip.model.Ack2Message;
-import net.lvsq.jgossip.model.AckMessage;
-import net.lvsq.jgossip.model.GossipDigest;
-import net.lvsq.jgossip.model.GossipMember;
-import net.lvsq.jgossip.model.GossipState;
-import net.lvsq.jgossip.model.HeartbeatState;
-import net.lvsq.jgossip.model.MessageType;
-import net.lvsq.jgossip.model.SeedMember;
 
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -144,7 +144,6 @@ public class GossipManager {
         @Override
         public void run() {
             //Update local member version
-            long t = System.currentTimeMillis();
             long newversion = endpointMembers.get(getSelf()).updateVersion();
             if (isDiscoverable(getSelf())) {
                 up(getSelf());
@@ -171,7 +170,6 @@ public class GossipManager {
                     }
                     checkStatus();
 
-                    System.out.println("execute time " + (System.currentTimeMillis() - t));
                     if (LOGGER.isTraceEnabled()) {
                         LOGGER.trace("live member : " + getLiveMembers());
                         LOGGER.trace("dead member : " + getDeadMembers());
@@ -318,6 +316,14 @@ public class GossipManager {
     private boolean sendGossip(Buffer buffer, List<GossipMember> members, int index) {
         if (buffer != null && index >= 0) {
             GossipMember target = members.get(index);
+            if (target.equals(getSelf())) {
+                int m_size = members.size();
+                if (m_size == 1) {
+                    return false;
+                } else {
+                    target = members.get((index + 1) % m_size);
+                }
+            }
             settings.getMsgService().sendMsg(target.getIpAddress(), target.getPort(), buffer);
             return settings.getSeedMembers().contains(target);
         }
@@ -343,6 +349,7 @@ public class GossipManager {
                 long now = System.currentTimeMillis();
                 long duration = now - state.getHeartbeatTime();
                 LOGGER.info("check : " + k.toString() + " state : " + state.toString() + " duration : " + duration + " convictedTime : " + convictedTime());
+                //TODO: delete the service from deadmembers which outage for a long time
                 if (duration > convictedTime() && (isAlive(k) || getLiveMembers().contains(k))) {
                     LOGGER.info("down ~~");
                     down(k);
