@@ -56,7 +56,17 @@ public class GossipSettings {
         return seedMembers;
     }
 
-    public void setSeedMembers(List<SeedMember> seedMembers) {
+     public void setSeedMembers(List<SeedMember> seedMembers) {
+        List<SeedMember> _seedMembers = new ArrayList<>();
+        if(seedMembers != null && !seedMembers.isEmpty()){
+            for(SeedMember seed : seedMembers){
+                if(!seed.eigenvalue().equalsIgnoreCase(GossipManager.getInstance().getSelf().eigenvalue())){
+                    if(!_seedMembers.contains(seed)){
+                        _seedMembers.add(seed);
+                    }
+                }
+            }
+        }
         this.seedMembers = seedMembers;
     }
 
