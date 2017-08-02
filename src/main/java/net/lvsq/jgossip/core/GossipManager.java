@@ -70,8 +70,6 @@ public class GossipManager {
     }
 
     public void init(String cluster, String ipAddress, Integer port, String id, List<SeedMember> seedMembers, GossipSettings settings, GossipListener listener) {
-        this.settings = settings;
-        this.settings.setSeedMembers(seedMembers);
         this.cluster = cluster;
         this.localGossipMember = new GossipMember();
         this.localGossipMember.setCluster(cluster);
@@ -81,6 +79,8 @@ public class GossipManager {
         this.localGossipMember.setState(GossipState.JOIN);
         this.endpointMembers.put(localGossipMember, new HeartbeatState());
         this.listener = listener;
+        this.settings = settings;
+        this.settings.setSeedMembers(seedMembers);
         fireGossipEvent(localGossipMember, GossipState.JOIN);
     }
 
