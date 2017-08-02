@@ -56,7 +56,7 @@ public class UDPMsgService implements MsgService {
         String cluster = j.getString(GossipMessageFactory.KEY_CLUSTER);
         String from = j.getString(GossipMessageFactory.KEY_FROM);
         if (StringUtil.isNullOrEmpty(cluster) || !GossipManager.getInstance().getCluster().equals(cluster)) {
-            LOGGER.error("This message shouldn't exist my world!");
+            LOGGER.error("This message shouldn't exist my world!" + data.toString());
             return;
         }
         MessageHandler handler = null;
