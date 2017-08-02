@@ -67,6 +67,10 @@ public class SeedMember implements Serializable {
     public void setId(String id) {
         this.id = id;
     }
+    
+    public String eigenvalue(){
+        return getCluster().concat(":").concat(getIpAddress()).concat(":").concat(getPort().toString());
+    }
 
     @Override
     public boolean equals(Object o) {
