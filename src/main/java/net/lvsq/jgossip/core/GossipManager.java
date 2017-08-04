@@ -348,13 +348,17 @@ public class GossipManager {
                 HeartbeatState state = endpoints.get(k);
                 long now = System.currentTimeMillis();
                 long duration = now - state.getHeartbeatTime();
-                LOGGER.info("check : " + k.toString() + " state : " + state.toString() + " duration : " + duration + " convictedTime : " + convictedTime());
-                //TODO: delete the service from deadmembers which outage for a long time
-                if (duration > convictedTime() && (isAlive(k) || getLiveMembers().contains(k))) {
-                    LOGGER.info("down ~~");
-                    down(k);
+                long convictedTime = convictedTime();
+                LOGGER.info("check : " + k.toString() + " state : " + state.toString() + " duration : " + duration + " convictedTime : " + convictedTime);
+                if (duration > convictedTime) {
+                    if (duration > (getSettings().getDeleteThreshold() * getSettings().getGossipInterval())) {
+                        clearMember(k);
+                    } else if (isAlive(k) || getLiveMembers().contains(k)) {
+                        LOGGER.info("down ~~");
+                        down(k);
+                    }
                 }
-                if (duration <= convictedTime() && (isDiscoverable(k) || getDeadMembers().contains(k))) {
+                if (duration <= convictedTime && (isDiscoverable(k) || getDeadMembers().contains(k))) {
                     LOGGER.info("up ~~");
                     up(k);
                 }
@@ -386,6 +390,16 @@ public class GossipManager {
         }
     }
 
+    private void clearMember(GossipMember member) {
+        rwlock.writeLock().lock();
+        try {
+            deadMembers.remove(member);
+            endpointMembers.remove(member);
+        } finally {
+            rwlock.writeLock().unlock();
+        }
+    }
+
     public void down(GossipMember member) {
         rwlock.writeLock().lock();
         try {
@@ -407,7 +421,7 @@ public class GossipManager {
             if (!liveMembers.contains(member)) {
                 liveMembers.add(member);
             }
-            if(deadMembers.contains(member)){
+            if (deadMembers.contains(member)) {
                 deadMembers.remove(member);
                 fireGossipEvent(member, GossipState.UP);
             }
