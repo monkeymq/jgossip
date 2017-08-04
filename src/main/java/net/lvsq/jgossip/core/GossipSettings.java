@@ -19,6 +19,7 @@ import net.lvsq.jgossip.model.SeedMember;
 import net.lvsq.jgossip.net.MsgService;
 import net.lvsq.jgossip.net.udp.UDPMsgService;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
