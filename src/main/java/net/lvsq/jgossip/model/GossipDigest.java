@@ -26,6 +26,7 @@ public class GossipDigest implements Serializable, Comparable<GossipDigest> {
     private InetSocketAddress endpoint;
     private long heartbeatTime;
     private long version;
+    private String id;
 
     @Override
     public int compareTo(GossipDigest o) {
@@ -42,6 +43,7 @@ public class GossipDigest implements Serializable, Comparable<GossipDigest> {
         this.endpoint = new InetSocketAddress(InetAddress.getByName(endpoint.getIpAddress()), endpoint.getPort());
         this.heartbeatTime = heartbeatTime;
         this.version = version;
+        this.id = endpoint.getId();
     }
 
     public InetSocketAddress getEndpoint() {
@@ -68,10 +70,18 @@ public class GossipDigest implements Serializable, Comparable<GossipDigest> {
         this.version = version;
     }
 
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
     @Override
     public String toString() {
         return "GossipDigest{" +
-                "endpoint=" + endpoint +
+                "endpoint=" + endpoint.toString() +
                 ", heartbeatTime=" + heartbeatTime +
                 ", version=" + version +
                 '}';
