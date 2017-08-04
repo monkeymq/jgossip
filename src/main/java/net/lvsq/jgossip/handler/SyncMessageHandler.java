@@ -56,6 +56,7 @@ public class SyncMessageHandler implements MessageHandler {
         member.setCluster(cluster);
         member.setIpAddress(g.getEndpoint().getAddress().getHostAddress());
         member.setPort(g.getEndpoint().getPort());
+        member.setId(g.getId());
         HeartbeatState hb = GossipManager.getInstance().getEndpointMembers().get(member);
         long remoteHeartbeatTime = g.getHeartbeatTime();
         long remoteVersion = g.getVersion();
