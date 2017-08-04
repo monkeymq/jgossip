@@ -407,8 +407,10 @@ public class GossipManager {
             if (!liveMembers.contains(member)) {
                 liveMembers.add(member);
             }
-            deadMembers.remove(member);
-            fireGossipEvent(member, GossipState.UP);
+            if(deadMembers.contains(member)){
+                deadMembers.remove(member);
+                fireGossipEvent(member, GossipState.UP);
+            }
         } finally {
             rwlock.writeLock().unlock();
         }
