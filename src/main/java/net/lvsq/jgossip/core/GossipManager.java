@@ -12,22 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.webex.cgossip.core;
+package net.lvsq.jgossip.core;
 
-import com.webex.cgossip.event.GossipListener;
-import com.webex.cgossip.model.Ack2Message;
-import com.webex.cgossip.model.AckMessage;
-import com.webex.cgossip.model.GossipDigest;
-import com.webex.cgossip.model.GossipMember;
-import com.webex.cgossip.model.GossipState;
-import com.webex.cgossip.model.HeartbeatState;
-import com.webex.cgossip.model.MessageType;
-import com.webex.cgossip.model.SeedMember;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
+import net.lvsq.jgossip.event.GossipListener;
+import net.lvsq.jgossip.model.Ack2Message;
+import net.lvsq.jgossip.model.AckMessage;
+import net.lvsq.jgossip.model.GossipDigest;
+import net.lvsq.jgossip.model.GossipMember;
+import net.lvsq.jgossip.model.GossipState;
+import net.lvsq.jgossip.model.HeartbeatState;
+import net.lvsq.jgossip.model.MessageType;
+import net.lvsq.jgossip.model.SeedMember;
 
 import java.net.UnknownHostException;
 import java.util.ArrayList;
