@@ -35,6 +35,9 @@ public class GossipSettings {
     //Which message sync implementation. Default is UDPMsgService.class
     private MsgService msgService = new UDPMsgService();
 
+    //Delete the deadth node when the sync message is not received more than [deleteThreshold] times
+    private int deleteThreshold = 3;
+
     private List<SeedMember> seedMembers;
 
     public int getGossipInterval() {
@@ -77,5 +80,13 @@ public class GossipSettings {
 
     public void setMsgService(MsgService msgService) {
         this.msgService = msgService;
+    }
+
+    public int getDeleteThreshold() {
+        return deleteThreshold;
+    }
+
+    public void setDeleteThreshold(int deleteThreshold) {
+        this.deleteThreshold = deleteThreshold;
     }
 }
