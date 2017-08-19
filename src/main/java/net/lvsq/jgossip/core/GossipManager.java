@@ -22,6 +22,7 @@ import io.vertx.core.logging.LoggerFactory;
 import net.lvsq.jgossip.event.GossipListener;
 import net.lvsq.jgossip.model.Ack2Message;
 import net.lvsq.jgossip.model.AckMessage;
+import net.lvsq.jgossip.model.CandidateMemberState;
 import net.lvsq.jgossip.model.GossipDigest;
 import net.lvsq.jgossip.model.GossipMember;
 import net.lvsq.jgossip.model.GossipState;
@@ -56,6 +57,7 @@ public class GossipManager {
     private Map<GossipMember, HeartbeatState> endpointMembers = new ConcurrentHashMap<>();
     private List<GossipMember> liveMembers = new ArrayList<>();
     private List<GossipMember> deadMembers = new ArrayList<>();
+    private Map<GossipMember, CandidateMemberState> candidateMembers = new ConcurrentHashMap<>();
     private GossipSettings settings;
     private GossipMember localGossipMember;
     private String cluster;
@@ -350,20 +352,15 @@ public class GossipManager {
                 long duration = now - state.getHeartbeatTime();
                 long convictedTime = convictedTime();
                 LOGGER.info("check : " + k.toString() + " state : " + state.toString() + " duration : " + duration + " convictedTime : " + convictedTime);
-                if (duration > convictedTime) {
-                    if (duration > (getSettings().getDeleteThreshold() * getSettings().getGossipInterval())) {
-                        clearMember(k);
-                    } else if (isAlive(k) || getLiveMembers().contains(k)) {
-                        LOGGER.info("down ~~");
-                        down(k);
-                    }
+                if (duration > convictedTime && (isAlive(k) || getLiveMembers().contains(k))) {
+                    downing(k, state);
                 }
                 if (duration <= convictedTime && (isDiscoverable(k) || getDeadMembers().contains(k))) {
-                    LOGGER.info("up ~~");
                     up(k);
                 }
             }
         }
+        checkCandidate();
     }
 
     private long convictedTime() {
@@ -401,6 +398,7 @@ public class GossipManager {
     }
 
     public void down(GossipMember member) {
+        LOGGER.info("down ~~");
         rwlock.writeLock().lock();
         try {
             member.setState(GossipState.DOWN);
@@ -415,11 +413,15 @@ public class GossipManager {
     }
 
     private void up(GossipMember member) {
+        LOGGER.info("up ~~");
         rwlock.writeLock().lock();
         try {
             member.setState(GossipState.UP);
             if (!liveMembers.contains(member)) {
                 liveMembers.add(member);
+            }
+            if(candidateMembers.containsKey(member)){
+                candidateMembers.remove(member);
             }
             if (deadMembers.contains(member)) {
                 deadMembers.remove(member);
@@ -430,6 +432,31 @@ public class GossipManager {
         }
 
     }
+
+    private void downing(GossipMember member, HeartbeatState state){
+        LOGGER.info("downing ~~");
+        if(candidateMembers.containsKey(member)){
+            CandidateMemberState cState = candidateMembers.get(member);
+            if(state.getHeartbeatTime() == cState.getHeartbeatTime()){
+                cState.updateCount();
+            }else if(state.getHeartbeatTime() > cState.getHeartbeatTime()){
+                candidateMembers.remove(member);
+            }
+        }else{
+            candidateMembers.put(member, new CandidateMemberState(state.getHeartbeatTime()));
+        }
+    }
+
+    private void checkCandidate(){
+        Set<GossipMember> keys = candidateMembers.keySet();
+        for(GossipMember m : keys){
+            if(candidateMembers.get(m).getDowningCount().get() >= getSettings().getDeleteThreshold()){
+                down(m);
+                candidateMembers.remove(m);
+            }
+        }
+    }
+
 
     protected void shutdown() {
         getSettings().getMsgService().unListen();
