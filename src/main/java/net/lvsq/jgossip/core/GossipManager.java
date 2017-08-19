@@ -431,6 +431,8 @@ public class GossipManager {
             }
             if (deadMembers.contains(member)) {
                 deadMembers.remove(member);
+            }
+            if(!member.equals(getSelf())){
                 fireGossipEvent(member, GossipState.UP);
             }
         } finally {
