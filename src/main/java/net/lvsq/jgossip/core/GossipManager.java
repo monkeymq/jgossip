@@ -179,6 +179,10 @@ public class GossipManager {
                         LOGGER.trace("endpoint : " + getEndpointMembers());
                         LOGGER.trace("convictthreshod :" + convictedTime());
                     }
+                    LOGGER.info("live member : " + getLiveMembers());
+                    LOGGER.info("dead member : " + getDeadMembers());
+                    LOGGER.info("endpoint : " + getEndpointMembers());
+                    LOGGER.info("convictthreshod :" + convictedTime());
                 }
             } catch (UnknownHostException e) {
                 LOGGER.error(e.getMessage());
@@ -364,10 +368,14 @@ public class GossipManager {
         checkCandidate();
     }
 
-    private long convictedTime() {
+    private int convergenceCount() {
         int size = getEndpointMembers().size();
-        int convergenceCount = (int) Math.floor(Math.log10(size) + Math.log(size) + 1);
-        return ((convergenceCount * (settings.getNetworkDelay() * 3 + executeGossipTime)) << 1) + settings.getGossipInterval();
+        int count = (int) Math.floor(Math.log10(size) + Math.log(size) + 1);
+        return count;
+    }
+
+    private long convictedTime() {
+        return ((convergenceCount() * (settings.getNetworkDelay() * 3 + executeGossipTime)) << 1) + settings.getGossipInterval();
     }
 
     private boolean isDiscoverable(GossipMember member) {
@@ -408,9 +416,7 @@ public class GossipManager {
                 deadMembers.add(member);
             }
             clearExecutor.schedule(() -> {
-                if (deadMembers.contains(member)) {
-                    deadMembers.remove(member);
-                }
+                clearMember(member);
             }, getSettings().getDeleteThreshold() * getSettings().getGossipInterval(), TimeUnit.MILLISECONDS);
             fireGossipEvent(member, GossipState.DOWN);
         } finally {
@@ -419,7 +425,6 @@ public class GossipManager {
     }
 
     private void up(GossipMember member) {
-        LOGGER.info("up ~~");
         rwlock.writeLock().lock();
         try {
             member.setState(GossipState.UP);
@@ -433,6 +438,7 @@ public class GossipManager {
                 deadMembers.remove(member);
             }
             if(!member.equals(getSelf())){
+                LOGGER.info("up ~~");
                 fireGossipEvent(member, GossipState.UP);
             }
         } finally {
@@ -458,7 +464,7 @@ public class GossipManager {
     private void checkCandidate() {
         Set<GossipMember> keys = candidateMembers.keySet();
         for (GossipMember m : keys) {
-            if (candidateMembers.get(m).getDowningCount().get() >= getSettings().getDeleteThreshold()) {
+            if (candidateMembers.get(m).getDowningCount().get() >= convergenceCount()) {
                 down(m);
                 candidateMembers.remove(m);
             }
