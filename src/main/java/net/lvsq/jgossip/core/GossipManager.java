@@ -53,7 +53,7 @@ public class GossipManager {
     private boolean isWorking = false;
     private ReentrantReadWriteLock rwlock = new ReentrantReadWriteLock();
     private ScheduledExecutorService doGossipExecutor = Executors.newScheduledThreadPool(1);
-    private ScheduledExecutorService clearExecutor = Executors.newSingleThreadScheduledExecutor();
+//    private ScheduledExecutorService clearExecutor = Executors.newSingleThreadScheduledExecutor();
 
     private Map<GossipMember, HeartbeatState> endpointMembers = new ConcurrentHashMap<>();
     private List<GossipMember> liveMembers = new ArrayList<>();
@@ -173,16 +173,11 @@ public class GossipManager {
                     }
                     checkStatus();
 
-                    if (LOGGER.isTraceEnabled()) {
-                        LOGGER.trace("live member : " + getLiveMembers());
-                        LOGGER.trace("dead member : " + getDeadMembers());
-                        LOGGER.trace("endpoint : " + getEndpointMembers());
-                        LOGGER.trace("convictthreshod :" + convictedTime());
-                    }
-                    LOGGER.info("live member : " + getLiveMembers());
-                    LOGGER.info("dead member : " + getDeadMembers());
-                    LOGGER.info("endpoint : " + getEndpointMembers());
-                    LOGGER.info("convictthreshod :" + convictedTime());
+                }
+                if (LOGGER.isTraceEnabled()) {
+                    LOGGER.trace("live member : " + getLiveMembers());
+                    LOGGER.trace("dead member : " + getDeadMembers());
+                    LOGGER.trace("endpoint : " + getEndpointMembers());
                 }
             } catch (UnknownHostException e) {
                 LOGGER.error(e.getMessage());
@@ -251,8 +246,12 @@ public class GossipManager {
     }
 
     private void remoteStateReplaceLocalState(GossipMember member, HeartbeatState remoteState) {
-        getEndpointMembers().put(member, remoteState);
         up(member);
+        if (endpointMembers.containsKey(member)) {
+            HeartbeatState state = endpointMembers.get(member);
+            endpointMembers.remove(member);
+            endpointMembers.put(member, state);
+        }
     }
 
     public GossipMember createByDigest(GossipDigest digest) {
@@ -309,7 +308,7 @@ public class GossipManager {
                 return;
             }
             int index = (size == 1) ? 0 : random.nextInt(size);
-            if (liveMembers.size() == 0) {
+            if (liveMembers.size() == 1) {
                 sendGossip2Seed(buffer, settings.getSeedMembers(), index);
             } else {
                 double prob = size / (liveMembers.size() + deadMembers.size());
@@ -341,7 +340,7 @@ public class GossipManager {
         if (buffer != null && index >= 0) {
             SeedMember target = members.get(index);
             settings.getMsgService().sendMsg(target.getIpAddress(), target.getPort(), buffer);
-            return settings.getSeedMembers().contains(target);
+            return true;
         }
         return false;
     }
@@ -396,15 +395,14 @@ public class GossipManager {
         }
     }
 
-    private void clearMember(GossipMember member) {
-        rwlock.writeLock().lock();
-        try {
-            deadMembers.remove(member);
-            endpointMembers.remove(member);
-        } finally {
-            rwlock.writeLock().unlock();
-        }
-    }
+//    private void clearMember(GossipMember member) {
+//        rwlock.writeLock().lock();
+//        try {
+//            endpointMembers.remove(member);
+//        } finally {
+//            rwlock.writeLock().unlock();
+//        }
+//    }
 
     public void down(GossipMember member) {
         LOGGER.info("down ~~");
@@ -415,9 +413,7 @@ public class GossipManager {
             if (!deadMembers.contains(member)) {
                 deadMembers.add(member);
             }
-            clearExecutor.schedule(() -> {
-                clearMember(member);
-            }, getSettings().getDeleteThreshold() * getSettings().getGossipInterval(), TimeUnit.MILLISECONDS);
+//            clearExecutor.schedule(() -> clearMember(member), getSettings().getDeleteThreshold() * getSettings().getGossipInterval(), TimeUnit.MILLISECONDS);
             fireGossipEvent(member, GossipState.DOWN);
         } finally {
             rwlock.writeLock().unlock();
@@ -436,9 +432,9 @@ public class GossipManager {
             }
             if (deadMembers.contains(member)) {
                 deadMembers.remove(member);
-            }
-            if(!member.equals(getSelf())){
                 LOGGER.info("up ~~");
+            }
+            if (!member.equals(getSelf())) {
                 fireGossipEvent(member, GossipState.UP);
             }
         } finally {
