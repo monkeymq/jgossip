@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author lvsq
@@ -35,48 +36,71 @@ public class SyncMessageHandler implements MessageHandler {
     @Override
     public void handle(String cluster, String data, String from) {
         if (data != null) {
-            JsonArray array = new JsonArray(data);
-            List<GossipDigest> olders = new ArrayList<>();
-            Map<GossipMember, HeartbeatState> newers = new HashMap<>();
-            for (Object e : array) {
-                GossipDigest g = Serializer.getInstance().decode(Buffer.buffer().appendString(e.toString()), GossipDigest.class);
-                compareDigest(g, cluster, olders, newers);
-            }
-            AckMessage ackMessage = new AckMessage(olders, newers);
-            Buffer ackBuffer = GossipManager.getInstance().encodeAckMessage(ackMessage);
-            if (from != null) {
-                String[] host = from.split(":");
-                GossipManager.getInstance().getSettings().getMsgService().sendMsg(host[0], Integer.valueOf(host[1]), ackBuffer);
+            try {
+                JsonArray array = new JsonArray(data);
+                List<GossipDigest> olders = new ArrayList<>();
+                Map<GossipMember, HeartbeatState> newers = new HashMap<>();
+                List<GossipMember> gMemberList = new ArrayList<>();
+                for (Object e : array) {
+                    GossipDigest g = Serializer.getInstance().decode(Buffer.buffer().appendString(e.toString()), GossipDigest.class);
+                    GossipMember member = new GossipMember();
+                    member.setCluster(cluster);
+                    member.setIpAddress(g.getEndpoint().getAddress().getHostAddress());
+                    member.setPort(g.getEndpoint().getPort());
+                    member.setId(g.getId());
+                    gMemberList.add(member);
+
+                    compareDigest(g, member, cluster, olders, newers);
+                }
+                // I have, you don't have
+                Map<GossipMember, HeartbeatState> endpoints = GossipManager.getInstance().getEndpointMembers();
+                Set<GossipMember> epKeys = endpoints.keySet();
+                for (GossipMember m : epKeys) {
+                    if (!gMemberList.contains(m)) {
+                        newers.put(m, endpoints.get(m));
+                    }
+                    if (m.equals(GossipManager.getInstance().getSelf())) {
+                        newers.put(m, endpoints.get(m));
+                    }
+                }
+                AckMessage ackMessage = new AckMessage(olders, newers);
+                Buffer ackBuffer = GossipManager.getInstance().encodeAckMessage(ackMessage);
+                if (from != null) {
+                    String[] host = from.split(":");
+                    GossipManager.getInstance().getSettings().getMsgService().sendMsg(host[0], Integer.valueOf(host[1]), ackBuffer);
+                }
+            } catch (NumberFormatException e) {
+                LOGGER.error(e.getMessage());
             }
         }
     }
 
-    private void compareDigest(GossipDigest g, String cluster, List<GossipDigest> olders, Map<GossipMember, HeartbeatState> newers) {
-        GossipMember member = new GossipMember();
-        member.setCluster(cluster);
-        member.setIpAddress(g.getEndpoint().getAddress().getHostAddress());
-        member.setPort(g.getEndpoint().getPort());
-        member.setId(g.getId());
-        HeartbeatState hb = GossipManager.getInstance().getEndpointMembers().get(member);
-        long remoteHeartbeatTime = g.getHeartbeatTime();
-        long remoteVersion = g.getVersion();
-        if (hb != null) {
-            long localHeartbeatTime = hb.getHeartbeatTime();
-            long localVersion = hb.getVersion();
+    private void compareDigest(GossipDigest g, GossipMember member, String cluster, List<GossipDigest> olders, Map<GossipMember, HeartbeatState> newers) {
 
-            if (remoteHeartbeatTime > localHeartbeatTime) {
-                olders.add(g);
-            } else if (remoteHeartbeatTime < localHeartbeatTime) {
-                newers.put(member, hb);
-            } else if (remoteHeartbeatTime == localHeartbeatTime) {
-                if (remoteVersion > localVersion) {
+        try {
+            HeartbeatState hb = GossipManager.getInstance().getEndpointMembers().get(member);
+            long remoteHeartbeatTime = g.getHeartbeatTime();
+            long remoteVersion = g.getVersion();
+            if (hb != null) {
+                long localHeartbeatTime = hb.getHeartbeatTime();
+                long localVersion = hb.getVersion();
+
+                if (remoteHeartbeatTime > localHeartbeatTime) {
                     olders.add(g);
-                } else if (remoteVersion < localVersion) {
+                } else if (remoteHeartbeatTime < localHeartbeatTime) {
                     newers.put(member, hb);
+                } else if (remoteHeartbeatTime == localHeartbeatTime) {
+                    if (remoteVersion > localVersion) {
+                        olders.add(g);
+                    } else if (remoteVersion < localVersion) {
+                        newers.put(member, hb);
+                    }
                 }
+            } else {
+                olders.add(g);
             }
-        } else {
-            olders.add(g);
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage());
         }
     }
 }
