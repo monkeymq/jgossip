@@ -14,9 +14,14 @@
 
 package net.lvsq.jgossip.handler;
 
+import io.vertx.core.logging.Logger;
+import io.vertx.core.logging.LoggerFactory;
+
 /**
  * @author lvsq
  */
 public interface MessageHandler {
+    Logger LOGGER = LoggerFactory.getLogger(MessageHandler.class);
+
     void handle(String cluster, String data, String from);
 }
