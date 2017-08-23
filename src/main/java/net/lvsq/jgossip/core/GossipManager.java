@@ -168,12 +168,12 @@ public class GossipManager {
                     gossip2UndiscoverableMember(syncMessageBuffer);
 
                     //step3.
-                    if (!b || liveMembers.size() < settings.getSeedMembers().size()) {
+                    if (!b || liveMembers.size() <= settings.getSeedMembers().size()) {
                         gossip2Seed(syncMessageBuffer);
                     }
-                    checkStatus();
 
                 }
+                checkStatus();
                 if (LOGGER.isTraceEnabled()) {
                     LOGGER.trace("live member : " + getLiveMembers());
                     LOGGER.trace("dead member : " + getDeadMembers());
@@ -224,34 +224,42 @@ public class GossipManager {
                 continue;
             }
 
-            HeartbeatState localState = getEndpointMembers().get(m);
-            HeartbeatState remoteState = endpointMembers.get(m);
+            try {
+                HeartbeatState localState = getEndpointMembers().get(m);
+                HeartbeatState remoteState = endpointMembers.get(m);
 
-            if (localState != null) {
-                long localHeartbeatTime = localState.getHeartbeatTime();
-                long remoteHeartbeatTime = remoteState.getHeartbeatTime();
-                if (remoteHeartbeatTime > localHeartbeatTime) {
-                    remoteStateReplaceLocalState(m, remoteState);
-                } else if (remoteHeartbeatTime == localHeartbeatTime) {
-                    long localVersion = localState.getVersion();
-                    long remoteVersion = remoteState.getVersion();
-                    if (remoteVersion > localVersion) {
+                if (localState != null) {
+                    long localHeartbeatTime = localState.getHeartbeatTime();
+                    long remoteHeartbeatTime = remoteState.getHeartbeatTime();
+                    if (remoteHeartbeatTime > localHeartbeatTime) {
                         remoteStateReplaceLocalState(m, remoteState);
+                    } else if (remoteHeartbeatTime == localHeartbeatTime) {
+                        long localVersion = localState.getVersion();
+                        long remoteVersion = remoteState.getVersion();
+                        if (remoteVersion > localVersion) {
+                            remoteStateReplaceLocalState(m, remoteState);
+                        }
                     }
+                } else {
+                    remoteStateReplaceLocalState(m, remoteState);
                 }
-            } else {
-                remoteStateReplaceLocalState(m, remoteState);
+            } catch (Exception e) {
+                LOGGER.error(e.getMessage());
             }
         }
     }
 
     private void remoteStateReplaceLocalState(GossipMember member, HeartbeatState remoteState) {
-        up(member);
-        if (endpointMembers.containsKey(member)) {
-            HeartbeatState state = endpointMembers.get(member);
-            endpointMembers.remove(member);
-            endpointMembers.put(member, state);
+        if (member.getState() == GossipState.UP) {
+            up(member);
         }
+        if (member.getState() == GossipState.DOWN) {
+            down(member);
+        }
+        if (endpointMembers.containsKey(member)) {
+            endpointMembers.remove(member);
+        }
+        endpointMembers.put(member, remoteState);
     }
 
     public GossipMember createByDigest(GossipDigest digest) {
@@ -304,14 +312,15 @@ public class GossipManager {
     private void gossip2Seed(Buffer buffer) {
         int size = settings.getSeedMembers().size();
         if (size > 0) {
-            if (size == 1 && settings.getSeedMembers().contains(localGossipMember)) {
+            if (size == 1 && settings.getSeedMembers().contains(gossipMember2SeedMember(getSelf()))) {
                 return;
             }
             int index = (size == 1) ? 0 : random.nextInt(size);
             if (liveMembers.size() == 1) {
                 sendGossip2Seed(buffer, settings.getSeedMembers(), index);
             } else {
-                double prob = size / (liveMembers.size() + deadMembers.size());
+                double prob = size / Double.valueOf(liveMembers.size());
+                ;
                 if (random.nextDouble() < prob) {
                     sendGossip2Seed(buffer, settings.getSeedMembers(), index);
                 }
@@ -321,50 +330,75 @@ public class GossipManager {
 
     private boolean sendGossip(Buffer buffer, List<GossipMember> members, int index) {
         if (buffer != null && index >= 0) {
-            GossipMember target = members.get(index);
-            if (target.equals(getSelf())) {
-                int m_size = members.size();
-                if (m_size == 1) {
-                    return false;
-                } else {
-                    target = members.get((index + 1) % m_size);
+            try {
+                GossipMember target = members.get(index);
+                if (target.equals(getSelf())) {
+                    int m_size = members.size();
+                    if (m_size == 1) {
+                        return false;
+                    } else {
+                        target = members.get((index + 1) % m_size);
+                    }
                 }
+                settings.getMsgService().sendMsg(target.getIpAddress(), target.getPort(), buffer);
+                return settings.getSeedMembers().contains(gossipMember2SeedMember(target));
+            } catch (Exception e) {
+                LOGGER.error(e.getMessage());
             }
-            settings.getMsgService().sendMsg(target.getIpAddress(), target.getPort(), buffer);
-            return settings.getSeedMembers().contains(target);
         }
         return false;
     }
 
     private boolean sendGossip2Seed(Buffer buffer, List<SeedMember> members, int index) {
         if (buffer != null && index >= 0) {
-            SeedMember target = members.get(index);
-            settings.getMsgService().sendMsg(target.getIpAddress(), target.getPort(), buffer);
-            return true;
+            try {
+                SeedMember target = members.get(index);
+                int m_size = members.size();
+                if (target.equals(getSelf())) {
+                    if (m_size <= 1) {
+                        return false;
+                    } else {
+                        target = members.get((index + 1) % m_size);
+                    }
+                }
+                settings.getMsgService().sendMsg(target.getIpAddress(), target.getPort(), buffer);
+                return true;
+            } catch (Exception e) {
+                LOGGER.error(e.getMessage());
+            }
         }
         return false;
     }
 
+    private SeedMember gossipMember2SeedMember(GossipMember member) {
+        SeedMember seed = new SeedMember(member.getCluster(), member.getIpAddress(), member.getPort(), member.getId());
+        return seed;
+    }
+
     private void checkStatus() {
-        GossipMember local = getSelf();
-        Map<GossipMember, HeartbeatState> endpoints = getEndpointMembers();
-        Set<GossipMember> epKeys = endpoints.keySet();
-        for (GossipMember k : epKeys) {
-            if (!k.equals(local)) {
-                HeartbeatState state = endpoints.get(k);
-                long now = System.currentTimeMillis();
-                long duration = now - state.getHeartbeatTime();
-                long convictedTime = convictedTime();
-                LOGGER.info("check : " + k.toString() + " state : " + state.toString() + " duration : " + duration + " convictedTime : " + convictedTime);
-                if (duration > convictedTime && (isAlive(k) || getLiveMembers().contains(k))) {
-                    downing(k, state);
-                }
-                if (duration <= convictedTime && (isDiscoverable(k) || getDeadMembers().contains(k))) {
-                    up(k);
+        try {
+            GossipMember local = getSelf();
+            Map<GossipMember, HeartbeatState> endpoints = getEndpointMembers();
+            Set<GossipMember> epKeys = endpoints.keySet();
+            for (GossipMember k : epKeys) {
+                if (!k.equals(local)) {
+                    HeartbeatState state = endpoints.get(k);
+                    long now = System.currentTimeMillis();
+                    long duration = now - state.getHeartbeatTime();
+                    long convictedTime = convictedTime();
+                    LOGGER.info("check : " + k.toString() + " state : " + state.toString() + " duration : " + duration + " convictedTime : " + convictedTime);
+                    if (duration > convictedTime && (isAlive(k) || getLiveMembers().contains(k))) {
+                        downing(k, state);
+                    }
+                    if (duration <= convictedTime && (isDiscoverable(k) || getDeadMembers().contains(k))) {
+                        up(k);
+                    }
                 }
             }
+            checkCandidate();
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage());
         }
-        checkCandidate();
     }
 
     private int convergenceCount() {
@@ -406,8 +440,8 @@ public class GossipManager {
 
     public void down(GossipMember member) {
         LOGGER.info("down ~~");
-        rwlock.writeLock().lock();
         try {
+            rwlock.writeLock().lock();
             member.setState(GossipState.DOWN);
             liveMembers.remove(member);
             if (!deadMembers.contains(member)) {
@@ -415,14 +449,16 @@ public class GossipManager {
             }
 //            clearExecutor.schedule(() -> clearMember(member), getSettings().getDeleteThreshold() * getSettings().getGossipInterval(), TimeUnit.MILLISECONDS);
             fireGossipEvent(member, GossipState.DOWN);
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage());
         } finally {
             rwlock.writeLock().unlock();
         }
     }
 
     private void up(GossipMember member) {
-        rwlock.writeLock().lock();
         try {
+            rwlock.writeLock().lock();
             member.setState(GossipState.UP);
             if (!liveMembers.contains(member)) {
                 liveMembers.add(member);
@@ -437,6 +473,8 @@ public class GossipManager {
             if (!member.equals(getSelf())) {
                 fireGossipEvent(member, GossipState.UP);
             }
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage());
         } finally {
             rwlock.writeLock().unlock();
         }
@@ -445,15 +483,19 @@ public class GossipManager {
 
     private void downing(GossipMember member, HeartbeatState state) {
         LOGGER.info("downing ~~");
-        if (candidateMembers.containsKey(member)) {
-            CandidateMemberState cState = candidateMembers.get(member);
-            if (state.getHeartbeatTime() == cState.getHeartbeatTime()) {
-                cState.updateCount();
-            } else if (state.getHeartbeatTime() > cState.getHeartbeatTime()) {
-                candidateMembers.remove(member);
+        try {
+            if (candidateMembers.containsKey(member)) {
+                CandidateMemberState cState = candidateMembers.get(member);
+                if (state.getHeartbeatTime() == cState.getHeartbeatTime()) {
+                    cState.updateCount();
+                } else if (state.getHeartbeatTime() > cState.getHeartbeatTime()) {
+                    candidateMembers.remove(member);
+                }
+            } else {
+                candidateMembers.put(member, new CandidateMemberState(state.getHeartbeatTime()));
             }
-        } else {
-            candidateMembers.put(member, new CandidateMemberState(state.getHeartbeatTime()));
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage());
         }
     }
 
