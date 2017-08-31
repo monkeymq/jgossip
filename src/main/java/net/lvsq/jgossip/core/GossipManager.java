@@ -469,10 +469,11 @@ public class GossipManager {
             if (deadMembers.contains(member)) {
                 deadMembers.remove(member);
                 LOGGER.info("up ~~");
+                 if (!member.equals(getSelf())) {
+                    fireGossipEvent(member, GossipState.UP);
+                }
             }
-            if (!member.equals(getSelf())) {
-                fireGossipEvent(member, GossipState.UP);
-            }
+           
         } catch (Exception e) {
             LOGGER.error(e.getMessage());
         } finally {
