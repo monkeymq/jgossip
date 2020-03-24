@@ -26,7 +26,9 @@ seedNodes.add(seed);
 
 #### Then, instantiation a `GossipService` object
 ```java
-GossipService gossipService = new GossipService(cluster,ipAddress, port, id, seedNodes, new GossipSettings(), (member, state) -> {});
+GossipService gossipService = new GossipService(cluster,ipAddress, port, id, seedNodes, new GossipSettings(), (member, state) -> {
+        //Do anything what you want
+    });
 ```
 
 #### Run `GossipService`
@@ -37,6 +39,16 @@ gossipService.start();
 #### Stop
 ```java
 gossipService.shutdown();
+```
+
+#### Get offline nodes
+```java
+gossipService.getGossipManager().getDeadMembers();
+```
+
+#### Get online nodes
+```java
+gossipService.getGossipManager().getLiveMembers();
 ```
 
 # Settings
