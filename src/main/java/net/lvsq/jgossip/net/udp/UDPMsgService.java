@@ -38,7 +38,9 @@ public class UDPMsgService implements MsgService {
 
     @Override
     public void listen(String ipAddress, int port) {
-        socket = Vertx.vertx().createDatagramSocket(new DatagramSocketOptions());
+        DatagramSocketOptions options = new DatagramSocketOptions();
+        options.setReceiveBufferSize(65535);
+        socket = Vertx.vertx().createDatagramSocket(options);
         socket.listen(port, ipAddress, asyncResult -> {
             if (asyncResult.succeeded()) {
                 socket.handler(packet -> handleMsg(packet.data()));
