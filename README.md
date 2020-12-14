@@ -7,7 +7,7 @@ Gossip protocol is a method for a group of nodes to discover and check the livel
 <dependency>
   <groupId>net.lvsq</groupId>
   <artifactId>jgossip</artifactId>
-  <version>1.3.3</version>
+  <version>1.3.4</version>
 </dependency>
 ```
 
