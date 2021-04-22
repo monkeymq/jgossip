@@ -26,6 +26,7 @@ import net.lvsq.jgossip.model.HeartbeatState;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 /**
  * @author lvsq
  */
