@@ -42,7 +42,7 @@ public class GossipService {
 
     public void start() {
         if (getGossipManager().isWorking()) {
-            LOGGER.info("jgossip already workinig");
+            LOGGER.info("jgossip is already working");
             return;
         }
         GossipManager.getInstance().start();

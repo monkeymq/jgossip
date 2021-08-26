@@ -20,8 +20,8 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author lvsq
  */
 public class VersionHelper {
-    private static AtomicLong v = new AtomicLong(0);
-    private static VersionHelper ourInstance = new VersionHelper();
+    private static final AtomicLong v = new AtomicLong(0);
+    private static final VersionHelper ourInstance = new VersionHelper();
 
     public static VersionHelper getInstance() {
         return ourInstance;

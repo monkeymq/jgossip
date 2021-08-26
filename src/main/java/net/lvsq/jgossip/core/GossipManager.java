@@ -88,7 +88,7 @@ public class GossipManager {
     }
 
     protected void start() {
-        LOGGER.info(String.format("Starting gossip! cluster[%s] ip[%s] port[%d] id[%s]", localGossipMember.getCluster(), localGossipMember.getIpAddress(), localGossipMember.getPort(), localGossipMember.getId()
+        LOGGER.info(String.format("Starting jgossip! cluster[%s] ip[%s] port[%d] id[%s]", localGossipMember.getCluster(), localGossipMember.getIpAddress(), localGossipMember.getPort(), localGossipMember.getId()
         ));
         isWorking = true;
         settings.getMsgService().listen(getSelf().getIpAddress(), getSelf().getPort());
@@ -281,7 +281,7 @@ public class GossipManager {
     }
 
     /**
-     * send sync message to a live member
+     * send sync message to some live members
      *
      * @param buffer sync data
      * @return if send to a seed member then return TURE
@@ -291,8 +291,15 @@ public class GossipManager {
         if (liveSize <= 0) {
             return false;
         }
-        int index = (liveSize == 1) ? 0 : random.nextInt(liveSize);
-        return sendGossip(buffer, liveMembers, index);
+//        int index = (liveSize == 1) ? 0 : random.nextInt(liveSize);
+//        return sendGossip(buffer, liveMembers, index);
+        boolean b =false;
+        int c = Math.min(liveSize, convergenceCount());
+        for (int i = 0; i < c; i++) {
+            int index = random.nextInt(liveSize);
+            b = b || sendGossip(buffer, liveMembers, index);
+        }
+        return b;
     }
 
     /**
@@ -386,7 +393,7 @@ public class GossipManager {
                     long now = System.currentTimeMillis();
                     long duration = now - state.getHeartbeatTime();
                     long convictedTime = convictedTime();
-                    LOGGER.info("check : " + k.toString() + " state : " + state.toString() + " duration : " + duration + " convictedTime : " + convictedTime);
+                    LOGGER.info("check : " + k + " state : " + state.toString() + " duration : " + duration + " convictedTime : " + convictedTime);
                     if (duration > convictedTime && (isAlive(k) || getLiveMembers().contains(k))) {
                         downing(k, state);
                     }
@@ -403,12 +410,11 @@ public class GossipManager {
 
     private int convergenceCount() {
         int size = getEndpointMembers().size();
-        int count = (int) Math.floor(Math.log10(size) + Math.log(size) + 1);
-        return count;
+        return (int) Math.floor(Math.log10(size) + Math.log(size) + 1);
     }
 
     private long convictedTime() {
-        return ((convergenceCount() * (settings.getNetworkDelay() * 3 + executeGossipTime)) << 1) + settings.getGossipInterval();
+        return ((convergenceCount() * (settings.getNetworkDelay() * 3L + executeGossipTime)) << 1) + settings.getGossipInterval();
     }
 
     private boolean isDiscoverable(GossipMember member) {

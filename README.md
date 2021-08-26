@@ -7,7 +7,7 @@ Gossip protocol is a method for a group of nodes to discover and check the livel
 <dependency>
   <groupId>net.lvsq</groupId>
   <artifactId>jgossip</artifactId>
-  <version>1.3.4</version>
+  <version>1.4.0</version>
 </dependency>
 ```
 
@@ -89,3 +89,5 @@ try {
 gossipService.start();
         
 ```
+
+Run the above code in each application to create a cluster based on the Gossip protocol. You can implement a meaningful GossipListener as the last parameter of GossipService. When the state of a node changes, you can capture this change and make some responses.

@@ -42,7 +42,7 @@ public class HeartbeatState {
 
     public HeartbeatState() {
         this.heartbeatTime = System.currentTimeMillis();
-        this.version = VersionHelper.getInstance().nextVersion();
+//        this.version = VersionHelper.getInstance().nextVersion();
     }
 
     public long updateVersion() {
