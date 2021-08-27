@@ -90,4 +90,4 @@ gossipService.start();
         
 ```
 
-Run the above code in each application to create a cluster based on the Gossip protocol. You can provide a meaningful GossipListener as the last parameter of GossipService. When state of a node changes, you can capture this change and make some responses.
+Run the above code in each application to create a cluster based on the Gossip protocol. You can provide a meaningful `GossipListener` as the last parameter of `GossipService`. When state of a node changes, you can capture this change and make some responses.
