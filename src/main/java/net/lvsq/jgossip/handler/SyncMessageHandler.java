@@ -89,7 +89,7 @@ public class SyncMessageHandler implements MessageHandler {
                     olders.add(g);
                 } else if (remoteHeartbeatTime < localHeartbeatTime) {
                     newers.put(member, hb);
-                } else if (remoteHeartbeatTime == localHeartbeatTime) {
+                } else {
                     if (remoteVersion > localVersion) {
                         olders.add(g);
                     } else if (remoteVersion < localVersion) {

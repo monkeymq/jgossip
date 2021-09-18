@@ -40,6 +40,8 @@ public class GossipSettings {
 
     private List<SeedMember> seedMembers;
 
+    private MessageManager messageManager = new InMemMessageManager();
+
     public int getGossipInterval() {
         return gossipInterval;
     }
@@ -88,5 +90,13 @@ public class GossipSettings {
 
     public void setDeleteThreshold(int deleteThreshold) {
         this.deleteThreshold = deleteThreshold;
+    }
+
+    public MessageManager getMessageManager() {
+        return messageManager;
+    }
+
+    public void setMessageManager(MessageManager messageManager) {
+        this.messageManager = messageManager;
     }
 }

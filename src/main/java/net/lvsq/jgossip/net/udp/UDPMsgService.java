@@ -25,6 +25,7 @@ import net.lvsq.jgossip.core.GossipMessageFactory;
 import net.lvsq.jgossip.handler.Ack2MessageHandler;
 import net.lvsq.jgossip.handler.AckMessageHandler;
 import net.lvsq.jgossip.handler.MessageHandler;
+import net.lvsq.jgossip.handler.RegularMessageHandler;
 import net.lvsq.jgossip.handler.ShutdownMessageHandler;
 import net.lvsq.jgossip.handler.SyncMessageHandler;
 import net.lvsq.jgossip.model.MessageType;
@@ -58,7 +59,7 @@ public class UDPMsgService implements MsgService {
         String cluster = j.getString(GossipMessageFactory.KEY_CLUSTER);
         String from = j.getString(GossipMessageFactory.KEY_FROM);
         if (StringUtil.isNullOrEmpty(cluster) || !GossipManager.getInstance().getCluster().equals(cluster)) {
-            LOGGER.error("This message shouldn't exist my world!" + data.toString());
+            LOGGER.error("This message shouldn't exist in my world!" + data);
             return;
         }
         MessageHandler handler = null;
@@ -71,6 +72,8 @@ public class UDPMsgService implements MsgService {
             handler = new Ack2MessageHandler();
         } else if (type == MessageType.SHUTDOWN) {
             handler = new ShutdownMessageHandler();
+        } else if (type == MessageType.REG_MESSAGE) {
+            handler = new RegularMessageHandler();
         } else {
             LOGGER.error("Not supported message type");
         }
@@ -94,7 +97,7 @@ public class UDPMsgService implements MsgService {
                 if (asyncResult.succeeded()) {
                     LOGGER.info("Socket was close!");
                 } else {
-                    LOGGER.error("Close socket an error has occurred. " + asyncResult.cause().getMessage());
+                    LOGGER.error("An error occurred while closing the socket. " + asyncResult.cause().getMessage());
                 }
             });
         }

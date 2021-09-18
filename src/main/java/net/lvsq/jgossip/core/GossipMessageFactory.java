@@ -21,7 +21,7 @@ import net.lvsq.jgossip.model.MessageType;
  * @author lvsq
  */
 public class GossipMessageFactory {
-    private static GossipMessageFactory ourInstance = new GossipMessageFactory();
+    private static final GossipMessageFactory ourInstance = new GossipMessageFactory();
     public static final String KEY_MSG_TYPE = "msgtype";
     public static final String KEY_DATA = "data";
     public static final String KEY_CLUSTER = "cluster";

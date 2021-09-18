@@ -18,7 +18,7 @@ package net.lvsq.jgossip.model;
  * @author lvsq
  */
 public enum GossipState {
-    UP("up"), DOWN("down"), JOIN("join");
+    UP("up"), DOWN("down"), JOIN("join"), RCV("receive");
 
     private final String state;
 

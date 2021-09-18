@@ -25,7 +25,7 @@ public class TestGossipService {
         for (int i = 0; i < 1; i++) {
             GossipService gossipService = null;
             try {
-                gossipService = new GossipService(cluster, ipAddress, port + i, null, seedNodes, new GossipSettings(), (member, state) -> {
+                gossipService = new GossipService(cluster, ipAddress, port + i, null, seedNodes, new GossipSettings(), (member, state, payload) -> {
                     System.out.println("member:" + member + "  state: " + state);
                 });
             } catch (Exception e) {
