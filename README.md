@@ -107,7 +107,7 @@ If you want to send messages to gossip cluster:
 gossipService.getGossipManager().publish("Hello World");
 ```
 
-If a node in cluster received messages, it will trigger the `GossipState.RCV` event, and handler predefined by `GossipListener` can consume these messages, such as <span style="color: green">Hello World</span> above.
+If a node in cluster received messages, it will trigger the `GossipState.RCV` event, and handler predefined by `GossipListener` can consume these messages, such as <html><span style="color: green">Hello World</span><html> above.
 
 
 The type of message is arbitrary, but only if it can be serialized. **jgossip** will try its best to deliver to every node. By default, messages will stay in memory for a while, and then **jgossip** will automatically delete them. So the best scenario for this feature is to send some simple messages regularly.
