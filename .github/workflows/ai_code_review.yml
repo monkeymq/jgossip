@@ -1,0 +1,43 @@
+# .github/workflows/ai_code_review.yml
+name: AI Powered Code Review
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize] # 当 PR 打开、重开或有新提交时触发
+
+jobs:
+  ai_review:
+    runs-on: ubuntu-latest # 使用 Ubuntu 运行器
+    permissions:
+      contents: read # 读取代码的权限
+      pull-requests: write # 在 PR 上发表评论的权限
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # 必须获取完整的历史，以便 git diff 正确工作
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9' # 或者你喜欢的 Python 版本
+
+      - name: Install Python Dependencies
+        run: pip install openai # 或者 google-generativeai，取决于你选择的 LLM
+
+      - name: Get Pull Request Details
+        id: pr_details
+        run: |
+          echo "GITHUB_BASE_REF=${{ github.event.pull_request.base.sha }}" >> $GITHUB_ENV
+          echo "GITHUB_HEAD_REF=${{ github.event.pull_request.head.sha }}" >> $GITHUB_ENV
+          echo "GITHUB_PR_NUMBER=${{ github.event.pull_request.number }}" >> $GITHUB_ENV
+          echo "GITHUB_REPOSITORY=${{ github.repository }}" >> $GITHUB_ENV
+
+      - name: Run AI Code Review
+        run: python .github/scripts/ai_code_reviewer.py
+        env:
+          LLM_API_KEY: ${{ secrets.OPENAI_API_KEY }} # 或者 ${{ secrets.GEMINI_API_KEY }}
+          LLM_MODEL_NAME: gpt-4o # 或者 gemini-pro
+          # GITHUB_TOKEN 是 Actions 默认提供的，用于 API 交互，这里会被 gh cli 自动使用
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
