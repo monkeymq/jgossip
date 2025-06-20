@@ -3,30 +3,30 @@ name: AI Powered Code Review
 
 on:
   pull_request:
-    types: [opened, reopened, synchronize] # 当 PR 打开、重开或有新提交时触发
+    types: [opened, reopened, synchronize]
 
 jobs:
   ai_review:
-    runs-on: ubuntu-latest # 使用 Ubuntu 运行器
+    runs-on: ubuntu-latest
     permissions:
-      contents: read # 读取代码的权限
-      pull-requests: write # 在 PR 上发表评论的权限
+      contents: read
+      pull-requests: write
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # 必须获取完整的历史，以便 git diff 正确工作
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.9' # 或者你喜欢的 Python 版本
+          python-version: '3.9'
 
       - name: Install Python Dependencies
-        run: pip install openai # 或者 google-generativeai，取决于你选择的 LLM
+        run: pip install openai
 
-      - name: Get Pull Request Details
+      - name: Get Pull Request Details and Set Env # 保持这一步，它将 SHA 设置为环境变量
         id: pr_details
         run: |
           echo "GITHUB_BASE_REF=${{ github.event.pull_request.base.sha }}" >> $GITHUB_ENV
@@ -34,10 +34,24 @@ jobs:
           echo "GITHUB_PR_NUMBER=${{ github.event.pull_request.number }}" >> $GITHUB_ENV
           echo "GITHUB_REPOSITORY=${{ github.repository }}" >> $GITHUB_ENV
 
+      - name: **Debug Env Vars Before Python Script** # <-- 新增的调试步骤
+        run: |
+          echo "Current GITHUB_BASE_REF: $GITHUB_BASE_REF"
+          echo "Current GITHUB_HEAD_REF: $GITHUB_HEAD_REF"
+          echo "Current GITHUB_PR_NUMBER: $GITHUB_PR_NUMBER"
+          echo "Current GITHUB_REPOSITORY: $GITHUB_REPOSITORY"
+          echo "LLM_API_KEY is present: ${LLM_API_KEY:+true}" # 检查API key是否存在，不打印值
+        env:
+          LLM_API_KEY: ${{ secrets.OPENAI_API_KEY }} # 需要在这里也传递，以便在此步骤中访问
+
       - name: Run AI Code Review
         run: python .github/scripts/ai_code_reviewer.py
         env:
-          LLM_API_KEY: ${{ secrets.OPENAI_API_KEY }} # 或者 ${{ secrets.GEMINI_API_KEY }}
-          LLM_MODEL_NAME: gpt-4o # 或者 gemini-pro
-          # GITHUB_TOKEN 是 Actions 默认提供的，用于 API 交互，这里会被 gh cli 自动使用
+          LLM_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          LLM_MODEL_NAME: gpt-4o
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # 明确传递这些环境变量，确保Python脚本能获取到正确的值
+          GITHUB_BASE_REF: ${{ env.GITHUB_BASE_REF }}
+          GITHUB_HEAD_REF: ${{ env.GITHUB_HEAD_REF }}
+          GITHUB_PR_NUMBER: ${{ env.GITHUB_PR_NUMBER }}
+          GITHUB_REPOSITORY: ${{ env.GITHUB_REPOSITORY }}
