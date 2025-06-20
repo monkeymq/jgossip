@@ -116,21 +116,41 @@ if __name__ == "__main__":
     llm_api_key = os.environ.get('LLM_API_KEY') # 统一使用 LLM_API_KEY 环境变量
     llm_model_name = os.environ.get('LLM_MODEL_NAME', 'gpt-4o') # 默认为 gpt-4o
 
+    # <-- 新增的调试输出 -->
+    print(f"--- Python Script Init Debug ---")
+    print(f"Read GITHUB_BASE_REF: {base_ref}")
+    print(f"Read GITHUB_HEAD_REF: {head_ref}")
+    print(f"Read GITHUB_PR_NUMBER: {pull_request_number}")
+    print(f"Read GITHUB_REPOSITORY: {repo_name}")
+    print(f"LLM_API_KEY is {'present' if llm_api_key else 'MISSING'}")
+    print(f"--- End Python Script Init Debug ---")
+    # <-- 结束新增的调试输出 -->
+
     if not all([base_ref, head_ref, pull_request_number, repo_name, llm_api_key]):
         print("Missing required environment variables.")
+        # 更详细的缺失信息
+        missing_vars = []
+        if not base_ref: missing_vars.append("GITHUB_BASE_REF")
+        if not head_ref: missing_vars.append("GITHUB_HEAD_REF")
+        if not pull_request_number: missing_vars.append("GITHUB_PR_NUMBER")
+        if not repo_name: missing_vars.append("GITHUB_REPOSITORY")
+        if not llm_api_key: missing_vars.append("LLM_API_KEY")
+        print(f"Specifically missing: {', '.join(missing_vars)}")
         sys.exit(1)
 
     print(f"Reviewing PR #{pull_request_number} for {repo_name}...")
     print(f"Base Ref: {base_ref}, Head Ref: {head_ref}")
 
     # 切换到 base_ref 以便正确获取 diff
-    subprocess.run(f"git fetch origin {base_ref}", shell=True, check=True)
-    subprocess.run(f"git checkout {base_ref}", shell=True, check=True)
+#     subprocess.run(f"git fetch origin {base_ref}", shell=True, check=True)
+#     subprocess.run(f"git checkout {base_ref}", shell=True, check=True)
 
     # 获取所有变更的 .java 文件路径
     changed_java_files_command = f"git diff --name-only {base_ref} {head_ref} | grep '\\.java$'"
+    print(f"Executing git diff command: {changed_java_files_command}") # <-- 新增调试：打印实际执行的命令
     changed_java_files = subprocess.check_output(changed_java_files_command, shell=True, text=True, encoding='utf-8').strip()
     changed_files_list = changed_java_files.split('\n') if changed_java_files else []
+
 
     if not changed_java_files:
         print("No Java files changed in this PR. Skipping AI review.")
