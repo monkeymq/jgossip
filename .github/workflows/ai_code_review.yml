@@ -18,7 +18,7 @@ jobs:
         run: pip install openai requests
 
       - name: Debug workspace
-        run: ls -R .github/scripts
+        run: ls -R .github
 
       - name: Download PR diff via GitHub API
         env:
