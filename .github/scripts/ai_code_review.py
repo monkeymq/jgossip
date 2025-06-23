@@ -12,6 +12,10 @@ def load_diff(file_path='pr.diff'):
 
 def call_gpt(diff_text):
     """Call AI to review the diff."""
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise ValueError("❌ OPENAI_API_KEY is not set.")
+
     client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"), base_url='https://llm-proxy.us-east-2.int.infra.intelligence.webex.com/azure/v1?api-version=2024-10-21',default_headers={"api-key": os.getenv("OPENAI_API_KEY")})
 
     prompt = f"""
