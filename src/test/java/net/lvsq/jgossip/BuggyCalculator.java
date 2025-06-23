@@ -9,6 +9,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class BuggyCalculator {
+
     private static final Logger logger = Logger.getLogger(BuggyCalculator.class.getName());
 
     public double divide(int numerator, int denominator) {
