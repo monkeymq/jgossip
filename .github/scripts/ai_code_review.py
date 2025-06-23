@@ -12,7 +12,7 @@ def load_diff(file_path='pr.diff'):
 
 def call_gpt(diff_text):
     """Call OpenAI GPT-4 to review the diff."""
-    client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"), base_url='https://llm-proxy.us-east-2.int.infra.intelligence.webex.com/azure/v1',default_headers={"api-key": os.getenv("OPENAI_API_KEY"))
+    client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"), base_url='https://llm-proxy.us-east-2.int.infra.intelligence.webex.com/azure/v1',default_headers={"api-key": os.getenv("OPENAI_API_KEY")})
 
     prompt = f"""
 You are a senior Java code reviewer.
