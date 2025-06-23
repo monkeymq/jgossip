@@ -17,6 +17,9 @@ jobs:
       - name: Install dependencies
         run: pip install openai requests
 
+      - name: Debug workspace
+        run: ls -R .github/scripts
+
       - name: Download PR diff via GitHub API
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
