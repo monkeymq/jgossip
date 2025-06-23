@@ -34,7 +34,7 @@ jobs:
           echo "GITHUB_PR_NUMBER=${{ github.event.pull_request.number }}" >> $GITHUB_ENV
           echo "GITHUB_REPOSITORY=${{ github.repository }}" >> $GITHUB_ENV
 
-      - name: **Debug Env Vars Before Python Script** # <-- 新增的调试步骤
+      - name: Debug Env Vars Before Python Script # <-- 新增的调试步骤
         run: |
           echo "Current GITHUB_BASE_REF: $GITHUB_BASE_REF"
           echo "Current GITHUB_HEAD_REF: $GITHUB_HEAD_REF"
