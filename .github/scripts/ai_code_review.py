@@ -16,7 +16,7 @@ def call_gpt(diff_text):
     if not api_key:
         raise ValueError("❌ OPENAI_API_KEY is not set.")
 
-    client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"), base_url='https://llm-proxy.us-east-2.int.infra.intelligence.webex.com/azure/v1?api-version=2024-10-21',default_headers={"api-key": os.getenv("OPENAI_API_KEY")})
+    client = openai.OpenAI(api_key=api_key, base_url='https://llm-proxy.us-east-2.int.infra.intelligence.webex.com/azure/v1?api-version=2024-10-21',default_headers={"api-key": api_key})
 
     prompt = f"""
 You are a senior Java code reviewer.
