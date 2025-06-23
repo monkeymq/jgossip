@@ -1,6 +1,6 @@
-import openai
 import os
 import requests
+import openai
 
 def load_diff(file_path='pr.diff'):
     """Load the diff content from file."""
@@ -11,8 +11,13 @@ def load_diff(file_path='pr.diff'):
         return f.read()
 
 def call_gpt(diff_text):
-    """Call OpenAI API to review the diff content."""
-    openai.api_key = os.getenv("OPENAI_API_KEY")
+    """Call AI to review the diff."""
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise ValueError("❌ OPENAI_API_KEY is not set.")
+
+    client = openai.OpenAI(api_key=api_key, base_url='https://llm-proxy.us-east-2.int.infra.intelligence.webex.com/azure/v1?api-version=2024-10-21',default_headers={"api-key": api_key})
+
     prompt = f"""
 You are a senior Java code reviewer.
 
@@ -36,20 +41,22 @@ Respond in **Markdown** format, organized as:
 ...
 
 Here is the diff:
+
 ```
 {diff_text}
 ```
 """
+
     print("🚀 Sending diff to AI for review...")
-    response = openai.ChatCompletion.create(
-        model="gpt-4",
+    response = client.chat.completions.create(
+        model="gpt-4o",
         messages=[
             {"role": "system", "content": "You are a Java code review expert."},
             {"role": "user", "content": prompt}
         ],
         temperature=0.2
     )
-    return response['choices'][0]['message']['content']
+    return response.choices[0].message.content
 
 def post_pr_comment(review_text):
     """Post review result as a comment on the PR."""
@@ -82,3 +89,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

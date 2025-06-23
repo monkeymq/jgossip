@@ -4,20 +4,30 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
-  review:
+  AI-Review:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Set up Python
+      - name: ✅ Checkout PR code
+        uses: actions/checkout@v3
+
+      - name: 🔍 Debug workspace structure
+        run: ls -R .github
+
+      - name: 🐍 Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
-      - name: Install dependencies
+      - name: 📦 Install dependencies
         run: pip install openai requests
 
-      - name: Download PR diff via GitHub API
+      - name: 🧾 Download PR diff via GitHub API
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
@@ -28,7 +38,7 @@ jobs:
                https://api.github.com/repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER \
                -o pr.diff
 
-      - name: Run AI code review
+      - name: 🤖 Run AI code review
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
