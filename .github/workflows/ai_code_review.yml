@@ -9,11 +9,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout PR code
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -22,10 +17,16 @@ jobs:
       - name: Install dependencies
         run: pip install openai requests
 
-      - name: Get PR diff
+      - name: Download PR diff via GitHub API
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          git fetch origin pull/${{ github.event.pull_request.number }}/head:pr
-          git diff origin/main...pr > pr.diff
+          curl -s -H "Authorization: token $GITHUB_TOKEN" \
+               -H "Accept: application/vnd.github.v3.diff" \
+               https://api.github.com/repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER \
+               -o pr.diff
 
       - name: Run AI code review
         env:
@@ -33,4 +34,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: python .github/scripts/ai_code_reviewer.py
+        run: python .github/scripts/gpt_review.py
