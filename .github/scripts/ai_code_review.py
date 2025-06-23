@@ -11,8 +11,8 @@ def load_diff(file_path='pr.diff'):
         return f.read()
 
 def call_gpt(diff_text):
-    """Call OpenAI GPT-4 to review the diff."""
-    client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"), base_url='https://llm-proxy.us-east-2.int.infra.intelligence.webex.com/azure/v1',default_headers={"api-key": os.getenv("OPENAI_API_KEY")})
+    """Call AI to review the diff."""
+    client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"), base_url='https://llm-proxy.us-east-2.int.infra.intelligence.webex.com/azure/v1?api-version=2024-10-21',default_headers={"api-key": os.getenv("OPENAI_API_KEY")})
 
     prompt = f"""
 You are a senior Java code reviewer.
@@ -43,9 +43,9 @@ Here is the diff:
 ```
 """
 
-    print("🚀 Sending diff to GPT-4 for review...")
+    print("🚀 Sending diff to AI for review...")
     response = client.chat.completions.create(
-        model="2024-10-21",
+        model="gpt-4o",
         messages=[
             {"role": "system", "content": "You are a Java code review expert."},
             {"role": "user", "content": prompt}
