@@ -1,57 +1,36 @@
-# .github/workflows/ai_code_review.yml
-name: AI Powered Code Review
+name: AI Code Review on PR
 
 on:
   pull_request:
-    types: [opened, reopened, synchronize]
+    types: [opened, synchronize, reopened]
 
 jobs:
-  ai_review:
+  review:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - name: Checkout PR code
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
+          python-version: '3.10'
 
-      - name: Install Python Dependencies
-        run: pip install openai
+      - name: Install dependencies
+        run: pip install openai requests
 
-      - name: Get Pull Request Details and Set Env # 保持这一步，它将 SHA 设置为环境变量
-        id: pr_details
+      - name: Get PR diff
         run: |
-          echo "GITHUB_BASE_REF=${{ github.event.pull_request.base.sha }}" >> $GITHUB_ENV
-          echo "GITHUB_HEAD_REF=${{ github.event.pull_request.head.sha }}" >> $GITHUB_ENV
-          echo "GITHUB_PR_NUMBER=${{ github.event.pull_request.number }}" >> $GITHUB_ENV
-          echo "GITHUB_REPOSITORY=${{ github.repository }}" >> $GITHUB_ENV
+          git fetch origin pull/${{ github.event.pull_request.number }}/head:pr
+          git diff origin/main...pr > pr.diff
 
-      - name: Debug Env Vars Before Python Script # <-- 新增的调试步骤
-        run: |
-          echo "Current GITHUB_BASE_REF: $GITHUB_BASE_REF"
-          echo "Current GITHUB_HEAD_REF: $GITHUB_HEAD_REF"
-          echo "Current GITHUB_PR_NUMBER: $GITHUB_PR_NUMBER"
-          echo "Current GITHUB_REPOSITORY: $GITHUB_REPOSITORY"
-          echo "LLM_API_KEY is present: ${LLM_API_KEY:+true}" # 检查API key是否存在，不打印值
+      - name: Run AI code review
         env:
-          LLM_API_KEY: ${{ secrets.OPENAI_API_KEY }} # 需要在这里也传递，以便在此步骤中访问
-
-      - name: Run AI Code Review
-        run: python .github/scripts/ai_code_reviewer.py
-        env:
-          LLM_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          LLM_MODEL_NAME: gpt-4o
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # 明确传递这些环境变量，确保Python脚本能获取到正确的值
-          GITHUB_BASE_REF: ${{ env.GITHUB_BASE_REF }}
-          GITHUB_HEAD_REF: ${{ env.GITHUB_HEAD_REF }}
-          GITHUB_PR_NUMBER: ${{ env.GITHUB_PR_NUMBER }}
-          GITHUB_REPOSITORY: ${{ env.GITHUB_REPOSITORY }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: python .github/scripts/gpt_review.py
