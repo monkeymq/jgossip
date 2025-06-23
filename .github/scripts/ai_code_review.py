@@ -1,6 +1,6 @@
-import openai
 import os
 import requests
+import openai
 
 def load_diff(file_path='pr.diff'):
     """Load the diff content from file."""
@@ -11,8 +11,9 @@ def load_diff(file_path='pr.diff'):
         return f.read()
 
 def call_gpt(diff_text):
-    """Call OpenAI API to review the diff content."""
-    openai.api_key = os.getenv("OPENAI_API_KEY")
+    """Call OpenAI GPT-4 to review the diff."""
+    client = openai.OpenAI(api_key=os.getenv("OPENAI_API_KEY"), base_url='https://llm-proxy.us-east-2.int.infra.intelligence.webex.com/azure/v1',default_headers={"api-key": os.getenv("OPENAI_API_KEY"))
+
     prompt = f"""
 You are a senior Java code reviewer.
 
@@ -36,20 +37,22 @@ Respond in **Markdown** format, organized as:
 ...
 
 Here is the diff:
+
 ```
 {diff_text}
 ```
 """
-    print("🚀 Sending diff to AI for review...")
-    response = openai.ChatCompletion.create(
-        model="gpt-4",
+
+    print("🚀 Sending diff to GPT-4 for review...")
+    response = client.chat.completions.create(
+        model="2024-10-21",
         messages=[
             {"role": "system", "content": "You are a Java code review expert."},
             {"role": "user", "content": prompt}
         ],
         temperature=0.2
     )
-    return response['choices'][0]['message']['content']
+    return response.choices[0].message.content
 
 def post_pr_comment(review_text):
     """Post review result as a comment on the PR."""
@@ -82,3 +85,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
