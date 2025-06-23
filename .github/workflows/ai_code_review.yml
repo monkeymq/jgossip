@@ -4,14 +4,14 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write
+
 jobs:
   AI-Review:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
-      id-token: write
-      secrets: inherit
 
     steps:
       - name: ✅ Checkout PR code
