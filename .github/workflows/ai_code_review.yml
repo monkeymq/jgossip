@@ -1,27 +1,26 @@
 name: AI Code Review on PR
 
 on:
-  pull_request:
+  pull_request_target:
     types: [opened, synchronize, reopened]
 
 permissions:
   contents: read
   pull-requests: write
-  id-token: write
 
 jobs:
   AI-Review:
     runs-on: ubuntu-latest
 
     steps:
-      - name: ✅ Checkout PR code
-        uses: actions/checkout@v3
+#      - name: ✅ Checkout PR code
+#        uses: actions/checkout@v3
 
       - name: 🔍 Debug workspace structure
         run: ls -R .github
 
       - name: 🐍 Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 

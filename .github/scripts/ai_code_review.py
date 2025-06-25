@@ -2,15 +2,27 @@ import os
 import requests
 import openai
 
+def load_event():
+    event_path = os.environ["GITHUB_EVENT_PATH"]
+    with open(event_path, "r") as f:
+        return json.load(f)
 
-def load_diff(file_path="pr.diff"):
-    """Load the diff content from file."""
-    if not os.path.exists(file_path):
-        print("❌ Diff file not found.")
-        return ""
-    with open(file_path, "r", encoding="utf-8") as f:
-        return f.read()
+def get_pr_diff(diff_url, github_token):
+    response = requests.get(diff_url, headers={
+        "Authorization": f"token {github_token}",
+        "Accept": "application/vnd.github.v3.diff"
+    })
+    response.raise_for_status()
+    return response.text
 
+
+# def load_diff(file_path="pr.diff"):
+#     """Load the diff content from file."""
+#     if not os.path.exists(file_path):
+#         print("❌ Diff file not found.")
+#         return ""
+#     with open(file_path, "r", encoding="utf-8") as f:
+#         return f.read()
 
 def call_gpt(diff_text):
     """Call AI to review the diff."""
@@ -86,14 +98,30 @@ def post_pr_comment(review_text):
     else:
         print("✅ Review comment posted successfully.")
 
+def post_comment(comment_url, body, github_token):
+    response = requests.post(comment_url, headers={
+        "Authorization": f"token {github_token}",
+        "Accept": "application/vnd.github.v3+json"
+    }, json={"body": body})
+    response.raise_for_status()
 
 def main():
-    diff = load_diff()
-    if not diff.strip():
-        print("ℹ️ No diff content found. Skipping review.")
-        return
+#     diff = load_diff()
+#     if not diff.strip():
+#         print("ℹ️ No diff content found. Skipping review.")
+#         return
+#     review = call_gpt(diff)
+#     post_pr_comment(review)
+
+    event = load_event()
+    github_token = os.environ["GITHUB_TOKEN"]
+
+    diff_url = event["pull_request"]["diff_url"]
+    comments_url = event["pull_request"]["comments_url"]
+
+    diff = get_pr_diff(diff_url, github_token)
     review = call_gpt(diff)
-    post_pr_comment(review)
+    post_comment(comments_url, f"🤖 **AI review feedback：**\n\n{review}", github_token)
 
 
 if __name__ == "__main__":
