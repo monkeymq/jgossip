@@ -1,5 +1,5 @@
 import os
-import openai
+from openai import AzureOpenAI
 from github import Github
 
 
@@ -39,10 +39,10 @@ def call_gpt():
 
     api_endpoint = OPENAI_API_ENDPOINT
 
-    client = openai.OpenAI(
+    client = AzureOpenAI(
         api_key=api_key,
-        base_url=api_endpoint,
-        default_headers={"api-key": api_key},
+        azure_endpoint=api_endpoint,
+        api_version="2024-10-21",  # Use the latest version
     )
 
     gh = Github(GITHUB_TOKEN)
