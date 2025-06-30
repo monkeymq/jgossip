@@ -30,9 +30,11 @@ def call_gpt(diff_text):
     if not api_key:
         raise ValueError("❌ OPENAI_API_KEY is not set.")
 
+    api_endpoint = os.environ.get("OPENAI_API_ENDPOINT")
+
     client = openai.OpenAI(
         api_key=api_key,
-        base_url="https://llm-proxy.us-east-2.int.infra.intelligence.webex.com/azure/v1?api-version=2024-10-21",
+        base_url=api_endpoint,
         default_headers={"api-key": api_key},
     )
 
