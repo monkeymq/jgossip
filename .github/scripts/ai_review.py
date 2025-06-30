@@ -134,15 +134,7 @@ def main():
 #     review = call_gpt(diff)
 #     post_pr_comment(review)
 
-    event = load_event()
-    github_token = os.environ["GITHUB_TOKEN"]
-
-    diff_url = event["pull_request"]["diff_url"]
-    comments_url = event["pull_request"]["comments_url"]
-
-    diff = get_pr_diff(diff_url, github_token)
-    review = call_gpt(diff)
-    post_comment(comments_url, f"🤖 **AI review feedback：**\n\n{review}", github_token)
+    call_gpt()
 
 
 if __name__ == "__main__":
