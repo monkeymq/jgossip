@@ -17,9 +17,9 @@ public class BuggyCalculator {
         return numerator / denominator;
     }
 
-    public int multiply(int a, int b) {
+    public int multiply(int a, int c) {
         // 潜在 Bug 3: 整数溢出未检查
-        return a * b;
+        return a * c;
     }
 
     public String concatenateStrings(String s1, String s2) {
