@@ -1,0 +1,15 @@
+name: Mark PR for AI Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  add-label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add 'pending-ai-review' label
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          labels: pending-ai-review
