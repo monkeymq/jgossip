@@ -27,20 +27,31 @@ jobs:
       - name: 📦 Install dependencies
         run: pip install openai requests
 
+      - name: ✅ Checkout the default branch
+        uses: actions/checkout@v4
+        with:
+          # 在 pull_request_target 事件中，我们必须手动检出 PR 提交的代码
+          # 否则它会检出主分支的代码，导致审查的是主分支而非PR分支
+          ref: ${{ github.event.pull_request.h  ead.sha }}
+
       - name: 🧾 Download PR diff via GitHub API
+        id: pr_diff
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          curl -s -H "Authorization: token $GITHUB_TOKEN" \
-               -H "Accept: application/vnd.github.v3.diff" \
-               https://api.github.com/repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER \
-               -o pr.diff
+          # 确保 GITHUB_TOKEN 有权限读取 PR
+          PR_DIFF=$(gh pr view ${{ github.event.number }} --json files --jq '.files | map(.patch) | join("\n")')
+          # 将 diff 输出设置为一个环境变量
+          echo "PR_DIFF<<EOF" >> $GITHUB_ENV
+          echo "$PR_DIFF" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
 
       - name: 🤖 Run AI code review
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_API_ENDPOINT: ${{ secrets.OPENAI_API_ENDPOINT }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
