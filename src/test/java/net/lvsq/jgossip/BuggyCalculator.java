@@ -11,10 +11,10 @@ import java.util.logging.Logger;
 public class BuggyCalculator {
     private static final Logger logger = Logger.getLogger(BuggyCalculator.class.getName());
 
-    public double divide(int numerator, int b) {
+    public double divide(int numerator, int a) {
         // 潜在 Bug 1: 除以零未处理
         // 潜在 Bug 2: 返回 double，但参数是 int，可能导致精度问题（如果结果需要精确）
-        return numerator / b;
+        return numerator / a;
     }
 
     public int multiply(int a, int c) {
